@@ -67,17 +67,17 @@ enum DialogTransitionType {
 }
 
 /// Displays a Material dialog above the current contents of the app
-Future<T?> showAnimatedDialog<T extends Object?>({
+Future<T?> showAnimatedDialog<T>({
   required BuildContext context,
   bool barrierDismissible = false,
   required WidgetBuilder builder,
-  animationType = DialogTransitionType.size,
+  animationType = DialogTransitionType.fade,
   Curve curve = Curves.linear,
   Duration? duration,
   Alignment alignment = Alignment.center,
-  Color? barrierColor,
-  Axis? axis = Axis.horizontal,
+  Axis? axis,
 }) {
+  assert(builder != null);
   assert(debugCheckHasMaterialLocalizations(context));
 
   final ThemeData theme = Theme.of(context);
@@ -91,13 +91,15 @@ Future<T?> showAnimatedDialog<T extends Object?>({
       return SafeArea(
         top: false,
         child: Builder(builder: (BuildContext context) {
-          return Theme(data: theme, child: pageChild);
+          return theme != null
+              ? Theme(data: theme, child: pageChild)
+              : pageChild;
         }),
       );
     },
     barrierDismissible: barrierDismissible,
     barrierLabel: MaterialLocalizations.of(context).modalBarrierDismissLabel,
-    barrierColor: barrierColor ?? Colors.black54,
+    barrierColor: Colors.black54,
     transitionDuration: duration ?? const Duration(milliseconds: 400),
     transitionBuilder: (BuildContext context, Animation<double> animation,
         Animation<double> secondaryAnimation, Widget child) {
@@ -197,6 +199,7 @@ Future<T?> showAnimatedDialog<T extends Object?>({
             ),
             child: child,
           );
+
         case DialogTransitionType.fadeScale:
           return ScaleTransition(
             alignment: alignment,
@@ -216,6 +219,7 @@ Future<T?> showAnimatedDialog<T extends Object?>({
               child: child,
             ),
           );
+
         case DialogTransitionType.scaleRotate:
           return ScaleTransition(
             alignment: alignment,
@@ -234,6 +238,7 @@ Future<T?> showAnimatedDialog<T extends Object?>({
               child: child,
             ),
           );
+
         case DialogTransitionType.rotate:
           return CustomRotationTransition(
             alignment: alignment,
@@ -241,6 +246,7 @@ Future<T?> showAnimatedDialog<T extends Object?>({
                 parent: animation, curve: Interval(0.0, 1.0, curve: curve))),
             child: child,
           );
+
         case DialogTransitionType.fadeRotate:
           return CustomRotationTransition(
             alignment: alignment,
@@ -254,6 +260,7 @@ Future<T?> showAnimatedDialog<T extends Object?>({
               child: child,
             ),
           );
+
         case DialogTransitionType.rotate3D:
           return Rotation3DTransition(
             alignment: alignment,
@@ -269,6 +276,7 @@ Future<T?> showAnimatedDialog<T extends Object?>({
               child: child,
             ),
           );
+
         case DialogTransitionType.size:
           return Align(
             alignment: alignment,
@@ -281,6 +289,7 @@ Future<T?> showAnimatedDialog<T extends Object?>({
               child: child,
             ),
           );
+
         case DialogTransitionType.sizeFade:
           return Align(
             alignment: alignment,
@@ -298,8 +307,10 @@ Future<T?> showAnimatedDialog<T extends Object?>({
               ),
             ),
           );
+
         case DialogTransitionType.none:
           return child;
+
         default:
           return FadeTransition(opacity: animation, child: child);
       }
@@ -380,7 +391,7 @@ class CustomDialogWidget extends StatelessWidget {
   /// 20 pixels is provided above the content to separate the content from the
   /// title, and padding of 24 pixels is provided on the left, right, and bottom
   /// to separate the content from the other edges of the dialog.
-  final EdgeInsetsGeometry? contentPadding;
+  final EdgeInsetsGeometry contentPadding;
 
   /// Style for the text in the [content] of this [AlertDialog].
   ///
@@ -461,18 +472,18 @@ class CustomDialogWidget extends StatelessWidget {
         case TargetPlatform.android:
         case TargetPlatform.fuchsia:
           label = semanticLabel ??
-              MaterialLocalizations.of(context).alertDialogLabel;
+              MaterialLocalizations.of(context)?.alertDialogLabel;
           break;
         case TargetPlatform.linux:
           label = semanticLabel ??
-              MaterialLocalizations.of(context).alertDialogLabel;
+              MaterialLocalizations.of(context)?.alertDialogLabel;
           break;
         case TargetPlatform.macOS:
           label = semanticLabel;
           break;
         case TargetPlatform.windows:
           label = semanticLabel ??
-              MaterialLocalizations.of(context).alertDialogLabel;
+              MaterialLocalizations.of(context)?.alertDialogLabel;
           break;
       }
     }
@@ -481,12 +492,12 @@ class CustomDialogWidget extends StatelessWidget {
       children.add(
         Flexible(
           child: Padding(
-            padding: contentPadding!,
+            padding: contentPadding,
             child: DefaultTextStyle(
               style: (contentTextStyle ??
                   dialogTheme.contentTextStyle ??
                   theme.textTheme.titleMedium)!,
-              child: content!,
+              child: content ?? Container(),
             ),
           ),
         ),
@@ -500,7 +511,7 @@ class CustomDialogWidget extends StatelessWidget {
         ButtonBarTheme(
           data: ButtonBarTheme.of(context),
           child: OverflowBar(
-            children: actions!,
+            children: actions ?? [],
           ),
         ),
       );
@@ -557,12 +568,12 @@ class CustomDialog extends StatelessWidget {
   const CustomDialog({
     Key? key,
     this.backgroundColor,
-    this.elevation,
+    required this.elevation,
     this.insetAnimationDuration = const Duration(milliseconds: 100),
     this.insetAnimationCurve = Curves.decelerate,
     this.minWidth = 280.0,
-    this.shape,
-    this.child,
+    required this.shape,
+    required this.child,
   }) : super(key: key);
 
   /// {@template flutter.material.dialog.backgroundColor}
@@ -587,13 +598,13 @@ class CustomDialog extends StatelessWidget {
   /// into the space that the dialog is placed in.
   ///
   /// Defaults to 100 milliseconds.
-  final Duration? insetAnimationDuration;
+  final Duration insetAnimationDuration;
 
   /// The curve to use for the animation shown when the system keyboard intrudes
   /// into the space that the dialog is placed in.
   ///
   /// Defaults to [Curves.fastOutSlowIn].
-  final Curve? insetAnimationCurve;
+  final Curve insetAnimationCurve;
 
   ///Min width of the dialog
   final double? minWidth;
@@ -610,7 +621,7 @@ class CustomDialog extends StatelessWidget {
   /// The widget below this widget in the tree.
   ///
   /// {@macro flutter.widgets.child}
-  final Widget? child;
+  final Widget child;
 
   // TODO(johnsonmh): Update default dialog border radius to 4.0 to match material spec.
   static const RoundedRectangleBorder _defaultDialogShape =
@@ -624,8 +635,8 @@ class CustomDialog extends StatelessWidget {
     return AnimatedPadding(
       padding: MediaQuery.of(context).viewInsets +
           const EdgeInsets.symmetric(horizontal: 40.0, vertical: 24.0),
-      duration: insetAnimationDuration!,
-      curve: insetAnimationCurve!,
+      duration: insetAnimationDuration,
+      curve: insetAnimationCurve,
       child: MediaQuery.removeViewInsets(
         removeLeft: true,
         removeTop: true,
